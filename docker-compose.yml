@@ -1,14 +1,8 @@
-version: "3"
+version: "3.7"
 
 services:
-  postgres-db:
-    build: ./postgres-db
-    volumes:
-      - ./postgres-db/pgdata/pgdata
+  postgres:
+    image: postgres:11.6
+    env_file: ./secrets.env
     ports:
       - 7557:5432
-    environment:
-      - POSTGRES_USER=docker
-      - POSTGRES_PASSWORD=docker
-      - PGDATA=/pgdata
-      - POSTGRES_DB=test_db
