@@ -11,7 +11,7 @@ USER_PASS_HOST=$(POSTGRES_USER):$(POSTGRES_PASSWORD)@localhost
 URL=postgres://$(USER_PASS_HOST):7557/$(POSTGRES_DB)?sslmode=disable
 SUCCESS=[ done "\xE2\x9C\x94" ]
 
-ifeq (migration,$(firstword $(MAKECMDGOALS)))
+ifeq ($(firstword $(MAKECMDGOALS)),$(filter $(firstword $(MAKECMDGOALS)),migration seed))
   name := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
   $(eval $(name):;@:)
 endif
@@ -19,10 +19,10 @@ endif
 ifeq ($(firstword $(MAKECMDGOALS)),$(filter $(firstword $(MAKECMDGOALS)),up down force))
   num := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
   $(eval $(num):;@:)
-  # When we migrate down or force down without a number the number defaults to 1.
-  # In other words, if we do "make down/make force" rather than "make down <number>/make force <number>".
-  # Note: migrating up without a number "make up" has no default on purpose to migrate to the latest migration.
-  # Therefore, you must specifically provide a number to prevent this -- "make up <number>"
+# When we migrate down or force down without a number the number defaults to 1.
+# In other words, if we do "make down/make force" rather than "make down <number>/make force <number>".
+# Note: migrating up without a number "make up" has no default on purpose to migrate to the latest migration.
+# Therefore, you must specifically provide a number to prevent this -- "make up <number>"
   ifndef num
     ifeq ($(firstword $(MAKECMDGOALS)),$(filter $(firstword $(MAKECMDGOALS)),down force))
       num := 1
@@ -33,7 +33,11 @@ endif
 # Friendly messages are printed as you migrate. 
 # You will be informed if you reach the oldest or latest migration available.
 
-migration: 
+migration:
+    ifndef name
+		$(error migration name is missing -> make migration <name>)
+    endif
+
 	@docker run --volume $(VOLUME) --network host migrate/migrate \
 	create \
 	-ext sql \
@@ -57,7 +61,7 @@ down:
 	|| echo $(SUCCESS) Already downgraded from very first migration! 1>&2
 
 force: 
-# A migration script can fail because of invalid syntax in sql files
+# A migration script can fail because of invalid syntax in sql files.
 # http://bit.ly/2HQHx5s
 #
 # To fix this, "force" down to the last working migration.
@@ -72,7 +76,16 @@ force:
 	&& echo $(SUCCESS) Successully migrated! \
 	|| echo $(SUCCESS) Already migrated to latest migration! 1>&2
 
+seed:
+    ifndef name
+		$(error seed name is missing -> make seed <name>)
+    endif
+
+	docker cp ./seed/$(name).sql $(shell docker-compose ps -q):/seed/$(name).sql
+	docker exec -u root postgres psql $(POSTGRES_DB) $(POSTGRES_USER) -f /seed/$(name).sql
+
 .PHONY: up
 .PHONY: down
+.PHONY: seed
 .PHONY: force
 .PHONY: migrations

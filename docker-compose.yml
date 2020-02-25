@@ -2,7 +2,9 @@ version: "3.7"
 
 services:
   postgres:
+    container_name: postgres
     image: postgres:11.6
     env_file: ./secrets.env
+    volumes: [/seed]
     ports:
       - 7557:5432

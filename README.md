@@ -77,6 +77,29 @@ make down
 make down <number>
 ```
 
+### Seeding
+
+Add a sql file in the `/seed` folder. For example:
+
+```
+users.sql
+```
+
+With Contents:
+
+```
+INSERT INTO users (name, age, email) VALUES
+('Jack', 13, 'jack@testemail.com' ),
+('Jill', 9, 'jill@testemail.com')
+ON CONFLICT DO NOTHING;
+```
+
+Use the same filename to populate the database:
+
+```
+make seed <name>
+```
+
 ### Handling errors: resolving a dirty database
 
 A migration script can fail because of invalid syntax in sql files making a database dirty
