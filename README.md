@@ -13,13 +13,18 @@ File Preview:
 ├── Makefile
 ├── README.md
 ├── docker-compose.yml
+├── docs
+│   └── carbon.png
 ├── migrations
 │   ├── 000001_create_users_table.down.sql
 │   ├── 000001_create_users_table.up.sql
 │   ├── 000002_add_age_to_users.down.sql
-│   └── 000002_add_age_to_users.up.sql
-└── secrets.env
-
+│   ├── 000002_add_age_to_users.up.sql
+│   ├── 000003_add_email_to_users.down.sql
+│   └── 000003_add_email_to_users.up.sql
+├── secrets.env
+└── seed
+    └── users.sql
 ```
 
 ## Usage
@@ -119,8 +124,10 @@ version: "3.7"
 
 services:
   postgres:
+    container_name: postgres
     image: postgres:11.6
     env_file: ./secrets.env
+    volumes: [/seed]
     ports:
       - 7557:5432
 ```
