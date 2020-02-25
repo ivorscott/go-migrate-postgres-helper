@@ -16,15 +16,15 @@ ifeq (migration,$(firstword $(MAKECMDGOALS)))
   $(eval $(name):;@:)
 endif
 
-ifeq ($(firstword $(MAKECMDGOALS)),$(filter $(firstword $(MAKECMDGOALS)),up down))
+ifeq ($(firstword $(MAKECMDGOALS)),$(filter $(firstword $(MAKECMDGOALS)),up down force))
   num := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
   $(eval $(num):;@:)
-  # When we migrate down without a number the number defaults to 1.
-  # In other words, if we do "make down" rather than "make down <number>".
+  # When we migrate down or force down without a number the number defaults to 1.
+  # In other words, if we do "make down/make force" rather than "make down <number>/make force <number>".
   # Note: migrating up without a number "make up" has no default on purpose to migrate to the latest migration.
   # Therefore, you must specifically provide a number to prevent this -- "make up <number>"
   ifndef num
-    ifeq (down,$(firstword $(MAKECMDGOALS)))
+    ifeq ($(firstword $(MAKECMDGOALS)),$(filter $(firstword $(MAKECMDGOALS)),down force))
       num := 1
     endif
   endif
@@ -56,6 +56,23 @@ down:
 	&& echo $(SUCCESS) Successully downgraded! \
 	|| echo $(SUCCESS) Already downgraded from very first migration! 1>&2
 
+force: 
+# A migration script can fail because of invalid syntax in sql files
+# http://bit.ly/2HQHx5s
+#
+# To fix this, "force" down to the last working migration.
+#
+# 1) "make force" or "make force <number>"
+# 2) fix the syntax issue
+# 3) then run "make up" again
+	@docker run --volume $(VOLUME) --network host migrate/migrate \
+	-path /migrations \
+	-verbose \
+	-database $(URL) force $(num) \
+	&& echo $(SUCCESS) Successully migrated! \
+	|| echo $(SUCCESS) Already migrated to latest migration! 1>&2
+
 .PHONY: up
 .PHONY: down
+.PHONY: force
 .PHONY: migrations

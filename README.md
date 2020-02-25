@@ -15,7 +15,9 @@ File Preview:
 ├── docker-compose.yml
 ├── migrations
 │   ├── 000001_create_users_table.down.sql
-│   └── 000001_create_users_table.up.sql
+│   ├── 000001_create_users_table.up.sql
+│   ├── 000002_add_age_to_users.down.sql
+│   └── 000002_add_age_to_users.up.sql
 └── secrets.env
 
 ```
@@ -28,13 +30,13 @@ Start the postgres database
 docker-compose up -d
 ```
 
-Create a migration
+### 1. Create a migration
 
 ```
 make migration <migration_name>
 ```
 
-Then add SQL to both up & down migrations files.
+### 2. Then add SQL to both up & down migrations files.
 
 For example:
 
@@ -51,28 +53,53 @@ CREATE TABLE users (
 DROP TABLE users;
 ```
 
-Migrate to latest migration
+### 3. Migrate to latest migration
 
 ```
 make up
 ```
 
-Migrate up a number
+### Migrate up a number
 
 ```
 make up <number>
 ```
 
-Migrate down 1
+### Migrate down 1
 
 ```
 make down
 ```
 
-Migrate down a number
+### Migrate down a number
 
 ```
 make down <number>
+```
+
+### Handling errors: resolving a dirty database
+
+A migration script can fail because of invalid syntax in sql files making a database dirty
+[Github issue](http://bit.ly/2HQHx5s).
+
+To fix this, force down 1, to the last working migration.
+
+1. `make force`
+2. fix the syntax issue
+3. then run `make up` again
+
+**NOTE:** If you already have postgres running on port 5432 on your host machine, map the host port to something else.
+In the docker-compose.yml file, this has already been done. `7557:5432` represents the `<hostPort:containerPort>` mapping.
+
+```
+version: "3.7"
+
+services:
+  postgres:
+    image: postgres:11.6
+    env_file: ./secrets.env
+    ports:
+      - 7557:5432
 ```
 
 ![Minion](./docs/carbon.png)
