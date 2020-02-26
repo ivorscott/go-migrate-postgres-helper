@@ -110,9 +110,9 @@ make seed <name>
 A migration script can fail because of invalid syntax in sql files making a database dirty
 [Github issue](http://bit.ly/2HQHx5s).
 
-To fix this, force down 1, to the last working migration.
+To fix this, force some version temporarily.
 
-1. `make force`
+1. `make force <version_number>`
 2. fix the syntax issue
 3. then run `make up` again
 

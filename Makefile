@@ -1,9 +1,5 @@
 #!make
 
-# This Makefile ALLOWS the following usage -> "make migration <name>"
-# Normally, this is not the case in Makefiles, usually it's -> "make migrations name=<name>"
-# http://bit.ly/37TR1r2
-
 include secrets.env
 
 VOLUME=$(PWD)/migrations:/migrations
@@ -11,20 +7,23 @@ USER_PASS_HOST=$(POSTGRES_USER):$(POSTGRES_PASSWORD)@localhost
 URL=postgres://$(USER_PASS_HOST):7557/$(POSTGRES_DB)?sslmode=disable
 SUCCESS=[ done "\xE2\x9C\x94" ]
 
+# This ALLOWS the following usage -> "make migration <name>", "make seed <name>"
+# Normally, this is not the case in Makefiles, usually it's -> "make migrations name=<name>" etc.
+# http://bit.ly/37TR1r2
 ifeq ($(firstword $(MAKECMDGOALS)),$(filter $(firstword $(MAKECMDGOALS)),migration seed))
   name := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
   $(eval $(name):;@:)
 endif
 
+# This ALLOWS the following usage -> "make up <number>", "make down <number>", "make force <number>"
 ifeq ($(firstword $(MAKECMDGOALS)),$(filter $(firstword $(MAKECMDGOALS)),up down force))
   num := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
   $(eval $(num):;@:)
-# When we migrate down or force down without a number the number defaults to 1.
-# In other words, if we do "make down/make force" rather than "make down <number>/make force <number>".
+# When we migrate down without a number the number defaults to 1.
 # Note: migrating up without a number "make up" has no default on purpose to migrate to the latest migration.
 # Therefore, you must specifically provide a number to prevent this -- "make up <number>"
   ifndef num
-    ifeq ($(firstword $(MAKECMDGOALS)),$(filter $(firstword $(MAKECMDGOALS)),down force))
+    ifeq ($(firstword $(MAKECMDGOALS)),$(filter $(firstword $(MAKECMDGOALS)),down))
       num := 1
     endif
   endif
@@ -64,9 +63,9 @@ force:
 # A migration script can fail because of invalid syntax in sql files.
 # http://bit.ly/2HQHx5s
 #
-# To fix this, "force" down to the last working migration.
+# To fix this, force some version temporarily.
 #
-# 1) "make force" or "make force <number>"
+# 1) "make force <version-number>"
 # 2) fix the syntax issue
 # 3) then run "make up" again
 	@docker run --volume $(VOLUME) --network host migrate/migrate \
